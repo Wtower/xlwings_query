@@ -18,8 +18,7 @@ def main():
     """
     Main function
     """
-    with xwq.Query(__file__) as q:
-        pass
+    q = xwq.Query(__file__)
 
 main()
 ```
