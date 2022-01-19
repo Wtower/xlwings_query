@@ -16,6 +16,9 @@ class Query:
         if not xw.apps:
             self.app = xw.App(visible=True)
 
-        # Get or open book
-        self.book = xw.books.open(self.filename)
+        # Check book is open
+        # https://github.com/Wtower/xlwings_query/issues/3
+        self.book = next((book for book in xw.books if book.name == Path(self.filename).name), None)
+        if self.book is None:
+            self.book = xw.books.open(self.filename)
         print(self.book.sheets(1).range('A1').value)
