@@ -8,20 +8,37 @@ class Query:
     """
     Import, connect and transform Excel data
     """
-    def __init__(self, filename, query_name) -> None:
+    def __init__(self, filename: str, query_name: str) -> None:
         # Replace extension with .xlsx if __file__ has been provided
         self.filename = Path(filename).with_suffix('.xlsx')
 
         # The query name to be used as the xported table and sheet name
         self.query_name = query_name
 
+        # The query object to be exported
+        self.query = None
+
         # Check if xl app is not open, then open it
         if not xw.apps:
             self.app = xw.App(visible=True)
 
-        # Check book is open
-        # https://github.com/Wtower/xlwings_query/issues/3
-        self.book = next((book for book in xw.books if book.name == Path(self.filename).name), None)
-        if self.book is None:
-            self.book = xw.books.open(self.filename)
-        print(self.book.sheets(1).range('A1').value)
+        # The target object
+        self.book = self.__excel_workbook(self.filename)
+        # print(self.book.sheets(1).range('A1').value)
+        # Eventually, a context manager will be needed to cleanup and export
+
+    def __excel_workbook(self, filename: str) -> xw.Book:
+        """
+        Check that a book is open or open it
+        https://github.com/Wtower/xlwings_query/issues/3
+        """
+        book = next((book for book in xw.books if book.name == Path(filename).name), None)
+        if book is None:
+            book = xw.books.open(self.filename)
+        return book
+
+    def excel_workbook(self, filename: str) -> None:
+        """
+        Append an Excel workbook to the query
+        """
+        self.query = self.__excel_workbook(filename)
