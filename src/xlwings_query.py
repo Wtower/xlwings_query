@@ -8,11 +8,14 @@ class Query:
     """
     Import, connect and transform Excel data
     """
-    def __init__(self, filename) -> None:
+    def __init__(self, filename, query_name) -> None:
         # Replace extension with .xlsx if __file__ has been provided
         self.filename = Path(filename).with_suffix('.xlsx')
 
-        # Check if xl is not open, then open it
+        # The query name to be used as the xported table and sheet name
+        self.query_name = query_name
+
+        # Check if xl app is not open, then open it
         if not xw.apps:
             self.app = xw.App(visible=True)
 

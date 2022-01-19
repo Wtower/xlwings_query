@@ -18,7 +18,7 @@ def main():
     """
     Main function
     """
-    q = xwq.Query(__file__)
+    q = xwq.Query(__file__, 'Target sheet')
 
 main()
 ```
