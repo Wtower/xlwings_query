@@ -15,8 +15,8 @@ class Query:
         # The query name to be used as the xported table and sheet name
         self.query_name = query_name
 
-        # The query object to be exported
-        self.query = None
+        # The query data to be exported
+        self.data = None
 
         # Check if xl app is not open, then open it
         if not xw.apps:
@@ -25,7 +25,7 @@ class Query:
         # The target object
         self.book = self.__get_excel_workbook(self.filename)
         # print(self.book.sheets(1).range('A1').value)
-        # Eventually, a context manager will be needed to cleanup and export
+        # TODO: Eventually, a context manager will be needed to cleanup and export
 
     @staticmethod
     def __get_excel_workbook(filename: str) -> xw.Book:
@@ -42,9 +42,12 @@ class Query:
         """
         Append an Excel workbook to the query
         """
-        self.query = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
+        self.data = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
 
     def navigate(self, item: str) -> None:
         """
         Navigate to the selected item (sheet/table) and append to the query
         """
+        if isinstance(self.data, xw.Book):
+            print('chk')
+        # TODO: handle unexpected data
