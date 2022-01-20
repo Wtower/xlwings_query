@@ -23,22 +23,23 @@ class Query:
             self.app = xw.App(visible=True)
 
         # The target object
-        self.book = self.__excel_workbook(self.filename)
+        self.book = self.__get_excel_workbook(self.filename)
         # print(self.book.sheets(1).range('A1').value)
         # Eventually, a context manager will be needed to cleanup and export
 
-    def __excel_workbook(self, filename: str) -> xw.Book:
+    @staticmethod
+    def __get_excel_workbook(filename: str) -> xw.Book:
         """
         Check that a book is open or open it
         https://github.com/Wtower/xlwings_query/issues/3
         """
         book = next((book for book in xw.books if book.name == Path(filename).name), None)
         if book is None:
-            book = xw.books.open(self.filename)
+            book = xw.books.open(filename)
         return book
 
-    def excel_workbook(self, filename: str) -> None:
+    def origin_excel_workbook(self, filename: str) -> None:
         """
         Append an Excel workbook to the query
         """
-        self.query = self.__excel_workbook(filename)
+        self.query = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
