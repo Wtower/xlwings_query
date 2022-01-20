@@ -38,8 +38,13 @@ class Query:
             book = xw.books.open(filename)
         return book
 
-    def origin_excel_workbook(self, filename: str) -> None:
+    def source_excel_workbook(self, filename: str) -> None:
         """
         Append an Excel workbook to the query
         """
         self.query = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
+
+    def navigate(self, item: str) -> None:
+        """
+        Navigate to the selected item (sheet/table) and append to the query
+        """

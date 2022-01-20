@@ -9,7 +9,8 @@ def main():
     Main function
     """
     query = xwq.Query(__file__, 'Target sheet')
-    query.origin_excel_workbook('My source workbook.xlsx')
+    query.source_excel_workbook('My source workbook.xlsx')
+    query.navigate('')
     # ...
 
 main()
