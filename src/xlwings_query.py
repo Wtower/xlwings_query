@@ -1,6 +1,7 @@
 """
 Defines the main class
 """
+from operator import index
 from pathlib import Path
 import xlwings as xw
 import pandas as pd
@@ -26,7 +27,24 @@ class Query:
         # The target object
         self.book = self.__get_excel_workbook(self.filename)
         # print(self.book.sheets(1).range('A1').value)
-        # TODO: Eventually, a context manager will be needed to cleanup and export
+
+    def __enter__(self) -> None:
+        """
+        Context manager enter
+        """
+        return self
+
+    def __exit__(self, *exc) -> None:
+        """
+        Context manager exit: save transformed data
+        """
+        sheet = next((sheet for sheet in self.book.sheets if sheet.name == self.query_name), None)
+        sheet = self.book.sheets.add(name=self.query_name) if sheet is None else sheet
+        table_name = 'tbl' + self.query_name
+        table = next((table for table in sheet.tables if table.name == table_name), None)
+        table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
+        # table.update(self.df[['Name', 'Data', 'Kind']], index=False)
+        # print(type(self.df.iloc[0]['Data']))
 
     @staticmethod
     def __get_excel_workbook(filename: str) -> xw.Book:
@@ -35,9 +53,7 @@ class Query:
         https://github.com/Wtower/xlwings_query/issues/3
         """
         book = next((book for book in xw.books if book.name == Path(filename).name), None)
-        if book is None:
-            book = xw.books.open(filename)
-        return book
+        return xw.books.open(filename) if book is None else book
 
     def source_excel_workbook(self, filename: str) -> None:
         """
