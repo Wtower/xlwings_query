@@ -3,6 +3,7 @@ Defines the main class
 """
 from pathlib import Path
 import xlwings as xw
+import pandas as pd
 
 class Query:
     """
@@ -16,7 +17,7 @@ class Query:
         self.query_name = query_name
 
         # The query data to be exported
-        self.data = None
+        self.df = None
 
         # Check if xl app is not open, then open it
         if not xw.apps:
@@ -42,12 +43,15 @@ class Query:
         """
         Append an Excel workbook to the query
         """
-        self.data = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
+        source = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
+        # Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
+        data = [(sheet.name, sheet, 'Sheet') for sheet in source.sheets]
+        self.df = pd.DataFrame(data, columns=('Name', 'Data', 'Kind'))
 
     def navigate(self, item: str) -> None:
         """
         Navigate to the selected item (sheet/table) and append to the query
         """
-        if isinstance(self.data, xw.Book):
-            print('chk')
+        # if isinstance(self.data, xw.Book):
+        #    print('chk')
         # TODO: handle unexpected data
