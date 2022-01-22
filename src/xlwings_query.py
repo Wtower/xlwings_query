@@ -47,6 +47,7 @@ class Query:
         table_name = 'tbl' + self.query_name
         table = next((table for table in sheet.tables if table.name == table_name), None)
         table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
+        #TODO: merge existing columns in target not present in source (xlw replaces them now)
         table.update(self.df, index=False)
 
     @staticmethod
@@ -79,3 +80,23 @@ class Query:
         else:
             range = sheet.tables[table_name].data_body_range
         self.df = range.options(pd.DataFrame, index=False, header=False).value
+
+    def remove_first_rows(self, rows: int) -> None:
+        """
+        Remove first rows from table
+        """
+        self.df = self.df.iloc[rows:]
+
+    def promote_headers(self) -> None:
+        """
+        Promotes the first row of values as the new column headers.
+        """
+        self.df.columns = [name if name else i for i, name in enumerate(self.df.iloc[0])]
+        self.remove_first_rows(1)
+
+    def fillna(self, method: str, columns=[]) -> None:
+        """
+        The value of the previous or next cell is propagated to the null-value cells
+        """
+        columns = columns if columns else self.df.columns
+        self.df[columns] = self.df[columns].fillna(method=method)
