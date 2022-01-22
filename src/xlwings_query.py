@@ -1,8 +1,10 @@
 """
 Defines the main class
 """
+from email import header
 from operator import index
 from pathlib import Path
+from statistics import mode
 import xlwings as xw
 import pandas as pd
 
@@ -17,12 +19,14 @@ class Query:
         # The query name to be used as the xported table and sheet name
         self.query_name = query_name
 
+        # The current source object
+        self.source = None
+
         # The query data to be exported
         self.df = None
 
         # Check if xl app is not open, then open it
-        if not xw.apps:
-            self.app = xw.App(visible=True)
+        self.app = xw.App(visible=True) if not xw.apps else None
 
         # The target object
         self.book = self.__get_excel_workbook(self.filename)
@@ -43,8 +47,7 @@ class Query:
         table_name = 'tbl' + self.query_name
         table = next((table for table in sheet.tables if table.name == table_name), None)
         table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
-        # table.update(self.df[['Name', 'Data', 'Kind']], index=False)
-        # print(type(self.df.iloc[0]['Data']))
+        table.update(self.df, index=False)
 
     @staticmethod
     def __get_excel_workbook(filename: str) -> xw.Book:
@@ -59,15 +62,20 @@ class Query:
         """
         Append an Excel workbook to the query
         """
-        source = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
+        self.source = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
         # Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
-        data = [(sheet.name, sheet, 'Sheet') for sheet in source.sheets]
-        self.df = pd.DataFrame(data, columns=('Name', 'Data', 'Kind'))
+        data = [(sheet.name, 'Sheet') for sheet in self.source.sheets]
+        self.df = pd.DataFrame(data, columns=('Name', 'Kind'))
 
-    def navigate(self, item: str) -> None:
+    def navigate(self, sheet_name: str, table_name=None) -> None:
         """
         Navigate to the selected item (sheet/table) and append to the query
+        https://gist.github.com/Elijas/2430813d3ad71aebcc0c83dd1f130e33
         """
-        # if isinstance(self.data, xw.Book):
-        #    print('chk')
-        # TODO: handle unexpected data
+        sheet = self.source.sheets[sheet_name]
+        if table_name is None:
+            size = (sheet.api.UsedRange.Rows.Count, sheet.api.UsedRange.Columns.Count)
+            range = sheet.range((1, 1), size)
+        else:
+            range = sheet.tables[table_name].data_body_range
+        self.df = range.options(pd.DataFrame, index=False, header=False).value
