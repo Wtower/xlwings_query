@@ -87,6 +87,12 @@ class Query:
         """
         self.df = self.df.iloc[rows:]
 
+    def remove_last_rows(self, rows: int) -> None:
+        """
+        Remove last rows from table
+        """
+        self.df = self.df.iloc[:-rows]
+
     def promote_headers(self) -> None:
         """
         Promotes the first row of values as the new column headers.
@@ -100,3 +106,9 @@ class Query:
         """
         columns = columns if columns else self.df.columns
         self.df[columns] = self.df[columns].fillna(method=method)
+
+    def split_text_column(self, column: str, pat=None) -> None:
+        """
+        Split a column around a given delimiter
+        """
+        self.df[[column + '.1', column + '.2']] = self.df[column].str.split(pat, 1, expand=True)
