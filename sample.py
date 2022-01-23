@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name, non-ascii-name
 """
 Transform data.
 Name this file with the same filename as the target xlsx in same folder.
@@ -19,6 +20,8 @@ def main():
         query.df.rename(columns={4: 'ID'}, inplace=True)
         query.df.query('`Column X` != "A" and `Column Y` == 1', inplace=True)
         query.split_text_column('Column Z', 'x|y')
+        regx = r'(\d+)\s?(?:pcs|pieces|)\s{0,3}[xX\*]\s{0,3}(\d+[.,]\d+)[m]?'
+        query.extract_text_column('Comment', regx, ['Pieces', 'Lengh'])
         print(query.df.info())
 
 main()
