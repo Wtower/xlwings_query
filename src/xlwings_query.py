@@ -1,7 +1,6 @@
 """
 Defines the main class
 """
-from typing import List, Tuple
 from pathlib import Path
 import xlwings as xw
 import pandas as pd
@@ -62,7 +61,7 @@ class Query:
         """
         self.source = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
         # Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
-        data: List[Tuple[str, str]] = [(sheet.name, 'Sheet') for sheet in self.source.sheets]
+        data: list[tuple[str, str]] = [(sheet.name, 'Sheet') for sheet in self.source.sheets]
         self.df = pd.DataFrame(data, columns=('Name', 'Kind'))
 
     def navigate(self, sheet_name: str, table_name: str = None) -> None:
@@ -72,7 +71,7 @@ class Query:
         """
         sheet: xw.Sheet = self.source.sheets[sheet_name]
         if table_name is None:
-            size: Tuple[int, int] = (
+            size: tuple[int, int] = (
                 sheet.api.UsedRange.Rows.Count,
                 sheet.api.UsedRange.Columns.Count
             )
@@ -125,3 +124,9 @@ class Query:
         Replace each occurence of pattern in the column
         """
         self.df[column] = self.df[column].str.replace(pat, repl)
+
+    def drop_columns_idx(self, idx: list[int]) -> None:
+        """
+        Remove columns by index
+        """
+        self.df.drop(self.df.columns[idx], axis=1, inplace=True)

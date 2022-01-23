@@ -21,7 +21,10 @@ def main():
         query.df.query('`Column X` != "A" and `Column Y` == 1', inplace=True)
         query.split_text_column('Column Z', 'x|y')
         regx = r'(\d+)\s?(?:pcs|pieces|)\s{0,3}[xX\*]\s{0,3}(\d+[.,]\d+)[m]?'
-        query.extract_text_column('Comment', regx, ['Pieces', 'Lengh'])
+        query.extract_text_column('Comment', regx, ['Pieces', 'Length'])
+        query.replace_value_text_column('Length', ',', '.')
+        query.df.dropna(subset=['Length'], inplace=True)
+        query.drop_columns_idx(list(range(3, 27)))
         print(query.df.info())
 
 main()
