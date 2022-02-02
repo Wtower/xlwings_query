@@ -4,6 +4,7 @@ Defines the main class
 from pathlib import Path
 import xlwings as xw
 import pandas as pd
+from filters import Filters
 
 class Query:
     """
@@ -43,8 +44,11 @@ class Query:
         table_name: str = 'tbl' + self.query_name
         table = next((table for table in sheet.tables if table.name == table_name), None)
         table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
+        filters = Filters(table)
+        filters.show_all_data()
         #TODO: merge existing columns in target not present in source (xlw replaces them now)
         table.update(self.df, index=False)
+        filters.restore_filters()
 
     @staticmethod
     def __get_excel_workbook(filename: Path) -> xw.Book:
