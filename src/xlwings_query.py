@@ -39,7 +39,7 @@ class Query:
         """
         Context manager exit: save transformed data
         """
-        sheet = self.book.get_or_create_sheet(self.query_name)
+        sheet: xl.Sheet = self.book.get_or_create_sheet(self.query_name)
         table_name: str = 'tbl' + self.query_name
         table = next((table for table in sheet.tables if table.name == table_name), None)
         table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
@@ -52,9 +52,9 @@ class Query:
     def source_excel_workbook(self, filename: str) -> None:
         """
         Append an Excel workbook to the query
+        Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
         """
         self.source = xl.Book(Path(filename).with_suffix('.xlsx'))
-        # Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
         data: list[tuple[str, str]] = [(sheet.name, 'Sheet') for sheet in self.source.sheets]
         self.df = pd.DataFrame(data, columns=('Name', 'Kind'))
 
@@ -63,7 +63,7 @@ class Query:
         Navigate to the selected item (sheet/table) and append to the query
         https://gist.github.com/Elijas/2430813d3ad71aebcc0c83dd1f130e33
         """
-        sheet: xw.Sheet = self.source.sheets[sheet_name]
+        sheet: xl.Sheet = self.source.get_sheet(sheet_name)
         if table_name is None:
             size: tuple[int, int] = (
                 sheet.api.UsedRange.Rows.Count,
