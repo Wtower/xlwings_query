@@ -63,3 +63,10 @@ class Sheet():
 
     def __getitem__(self, items):
         return self._sheet[items]
+
+    def get_or_create_table(self: Sheet, table_name: str):
+        """
+        Get an existing table or create it
+        """
+        table = next((table for table in self._sheet.tables if table.name == table_name), None)
+        return self._sheet.tables.add(source=self._sheet['A1'], name=table_name) if table is None else table
