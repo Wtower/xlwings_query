@@ -1,6 +1,7 @@
 """
 Defines the main class
 """
+import sys
 from pathlib import Path
 import xlwings as xw
 import pandas as pd
@@ -65,10 +66,17 @@ class Query:
         """
         sheet: xl.Sheet = self.source.get_sheet(sheet_name)
         if table_name is None:
-            size: tuple[int, int] = (
-                sheet.api.UsedRange.Rows.Count,
-                sheet.api.UsedRange.Columns.Count
-            )
+            if 'pywin32' in sys.modules:
+                size: tuple[int, int] = (
+                    sheet.api.UsedRange.Rows.Count,
+                    sheet.api.UsedRange.Columns.Count
+                )
+            elif 'appscript' in sys.modules:
+                # TODO: This seems to not be working:
+                size = (
+                    sheet.api.used_range.rows.count,
+                    sheet.api.used_range.columns.count
+                )
             xl_range: xw.Range = sheet.range((1, 1), size)
         else:
             xl_range = sheet.tables[table_name].data_body_range
