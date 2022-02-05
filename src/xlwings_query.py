@@ -5,12 +5,15 @@ from pathlib import Path
 import xlwings as xw
 import pandas as pd
 from filters import Filters
+import xl
 
 class Query:
     """
     Import, connect and transform Excel data
     """
     def __init__(self, filename: str, query_name: str) -> None:
+        self.app = xl.App()
+
         # Replace extension with .xlsx if __file__ has been provided
         self.filename: Path = Path(filename).with_suffix('.xlsx')
 
@@ -18,16 +21,13 @@ class Query:
         self.query_name: str = query_name
 
         # The current source object
-        self.source: xw.Book = None
+        self.source: xl.Book = None
 
         # The query data to be exported
         self.df: pd.DataFrame = None # pylint: disable=invalid-name
 
-        # Check if xl app is not open, then open it
-        self.app: xw.App = xw.App(visible=True) if not xw.apps else None
-
         # The target object
-        self.book: xw.Book = self.__get_excel_workbook(self.filename)
+        self.book = xl.Book(self.filename)
 
     def __enter__(self):
         """
@@ -39,8 +39,7 @@ class Query:
         """
         Context manager exit: save transformed data
         """
-        sheet: xw.Sheet = next((s for s in self.book.sheets if s.name == self.query_name), None)
-        sheet = self.book.sheets.add(name=self.query_name) if sheet is None else sheet
+        sheet: xl.Sheet = self.book.get_or_create_sheet(self.query_name)
         table_name: str = 'tbl' + self.query_name
         table = next((table for table in sheet.tables if table.name == table_name), None)
         table = sheet.tables.add(source=sheet['A1'], name=table_name) if table is None else table
@@ -50,21 +49,12 @@ class Query:
         table.update(self.df, index=False)
         filters.restore_filters()
 
-    @staticmethod
-    def __get_excel_workbook(filename: Path) -> xw.Book:
-        """
-        Check that a book is open or open it
-        https://github.com/Wtower/xlwings_query/issues/3
-        """
-        book: xw.Book = next((book for book in xw.books if book.name == Path(filename).name), None)
-        return xw.books.open(filename) if book is None else book
-
     def source_excel_workbook(self, filename: str) -> None:
         """
         Append an Excel workbook to the query
+        Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
         """
-        self.source = self.__get_excel_workbook(Path(filename).with_suffix('.xlsx'))
-        # Get a list of book sheets. Tables in xlwings belong in xw.sheet, not book.
+        self.source = xl.Book(Path(filename).with_suffix('.xlsx'))
         data: list[tuple[str, str]] = [(sheet.name, 'Sheet') for sheet in self.source.sheets]
         self.df = pd.DataFrame(data, columns=('Name', 'Kind'))
 
@@ -73,7 +63,7 @@ class Query:
         Navigate to the selected item (sheet/table) and append to the query
         https://gist.github.com/Elijas/2430813d3ad71aebcc0c83dd1f130e33
         """
-        sheet: xw.Sheet = self.source.sheets[sheet_name]
+        sheet: xl.Sheet = self.source.get_sheet(sheet_name)
         if table_name is None:
             size: tuple[int, int] = (
                 sheet.api.UsedRange.Rows.Count,
