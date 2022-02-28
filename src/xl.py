@@ -23,11 +23,12 @@ class Book():
         """
         Check that a book is open or open it
         https://github.com/Wtower/xlwings_query/issues/3
-        https://stackoverflow.com/questions/2491819/how-to-return-a-value-from-init-in-python
         https://stackoverflow.com/q/33533148/940098
         """
-        book: xw.Book = next((book for book in xw.books if book.name == Path(filename).name), None)
-        self._book = xw.books.open(filename) if book is None else book
+        if Path(filename).name in [b.name for b in xw.books]:
+            self._book: xw.Book = xw.books[Path(filename).name]
+        else:
+            self._book = xw.books.open(filename)
 
     def __getattr__(self, __name: str):
         """
@@ -47,8 +48,9 @@ class Book():
         """
         Get an existing sheet or create it
         """
-        sheet: xw.Sheet = next((s for s in self._book.sheets if s.name == sheet_name), None)
-        return Sheet(self._book.sheets.add(name=sheet_name) if sheet is None else sheet)
+        if sheet_name in [s.name for s in self._book.sheets]:
+            return Sheet(self._book.sheets[sheet_name])
+        return Sheet(self._book.sheets.add(name=sheet_name))
 
 class Sheet():
     """
@@ -68,5 +70,14 @@ class Sheet():
         """
         Get an existing table or create it
         """
-        table = next((table for table in self._sheet.tables if table.name == table_name), None)
-        return self._sheet.tables.add(source=self._sheet['A1'], name=table_name) if table is None else table
+        if table_name in [table for table in self._sheet.tables]:
+            return self._sheet.tables[table_name]
+        return self._sheet.tables.add(source=self._sheet['A1'], name=table_name)
+
+class Table():
+    """
+    Encapsulate the Table class
+    https://docs.xlwings.org/en/latest/api.html#table
+    """
+    def __init__(self, table=None): #, file_name=None, sheet_name=None, table_name=None) -> None:
+        self._table = table
