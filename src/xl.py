@@ -2,9 +2,11 @@
 Defines classes to encapsulate xlwings
 """
 from __future__ import annotations
+from typing import Optional, Union
 import os
 from pathlib import Path
 import xlwings as xw
+import pandas as pd
 
 class App(): # pylint: disable=too-few-public-methods
     """
@@ -36,14 +38,58 @@ class Book():
         """
         App()
         if fuzzy:
-            from thefuzz import process # pylint: disable=import-outside-toplevel
-            filename = str(Path(
-                Path(filename).parent,
-                process.extractOne(Path(filename).name, os.listdir())[0]))
+            filename = Book.fuzzy_filename(filename)
         if Path(filename).name in [b.name for b in xw.books]:
             self._book: xw.Book = xw.books[Path(filename).name]
         else:
             self._book = xw.books.open(filename)
+
+    @staticmethod
+    def fuzzy_filename(filename: str) -> str:
+        """
+        Match the closest filename.
+        Useful for some extended-charset filenames that have different enconding for OSX/Win.
+        """
+        from thefuzz import process # pylint: disable=import-outside-toplevel
+        return str(Path(
+            Path(filename).parent,
+            process.extractOne(Path(filename).name, os.listdir())[0]))
+
+    @staticmethod
+    def read(
+        filename: str,
+        fuzzy: Optional[bool] = False,
+        sheet_name: Optional[Union[int, str]] = 0,
+        index_col: Optional[int] = None,
+        header: Optional[int] = 0
+    ) -> pd.DataFrame:
+        """
+        Read an Excel file into Pandas Dataframe.
+        If the file is open, use xlwings, otherwise pandas.
+        ## Parameters
+        filename: str
+            The pathfilename to get or open.
+        fuzzy: bool, default False
+            If defined, match the closest filename
+        sheet_name: int or str, default 0
+            The sheet index or name.
+        index_col: int, default None
+            Column (0-indexed) to use as row labels (as with Pandas).
+            Note: For xlwings, None is 0, so converted to 1-indexed index.
+        header: int, default 0
+            Row (0-indexed) to use as column labels.
+            Note: For xlwings, None is 0, so converted to 1-indexed index.
+        """
+        if fuzzy:
+            filename = Book.fuzzy_filename(filename)
+        if xw.apps and Path(filename).name in [b.name for b in xw.books]:
+            if index_col is None:
+                index_col = -1
+            if header is None:
+                header = -1
+            return xw.books[Path(filename).name].sheets[sheet_name].used_range. \
+                options(pd.DataFrame, index=index_col + 1, header=header + 1).value
+        return pd.read_excel(filename, sheet_name=sheet_name, header=header, index_col=index_col)
 
     def __getattr__(self, __name: str):
         """
@@ -94,5 +140,6 @@ class Table(): # pylint: disable=too-few-public-methods
     Encapsulate the Table class
     https://docs.xlwings.org/en/latest/api.html#table
     """
-    def __init__(self, table=None): #, file_name=None, sheet_name=None, table_name=None) -> None:
+    def __init__(self, table=None) -> None:
+        #, file_name=None, sheet_name=None, table_name=None) -> None:
         self._table = table
