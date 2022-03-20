@@ -53,13 +53,14 @@ class Book():
         from thefuzz import process # pylint: disable=import-outside-toplevel
         return str(Path(
             Path(filename).parent,
-            process.extractOne(Path(filename).name, os.listdir())[0]))
+            process.extractOne(Path(filename).name, os.listdir(Path(filename).parent))[0]))
 
     @staticmethod
-    def read(
+    def read( # pylint: disable=too-many-arguments
         filename: str,
         fuzzy: Optional[bool] = False,
         sheet_name: Optional[Union[int, str]] = 0,
+        table_name: Optional[Union[int, str]] = None,
         index_col: Optional[int] = None,
         header: Optional[int] = 0
     ) -> pd.DataFrame:
@@ -73,12 +74,16 @@ class Book():
             If defined, match the closest filename
         sheet_name: int or str, default 0
             The sheet index or name.
+        table_name: int or str, default 0
+            The table index or name in sheet (only for xlwings).
+            If not provided, then `used_range` is used.
         index_col: int, default None
             Column (0-indexed) to use as row labels (as with Pandas).
             Note: For xlwings, None is 0, so converted to 1-indexed index.
         header: int, default 0
             Row (0-indexed) to use as column labels.
             Note: For xlwings, None is 0, so converted to 1-indexed index.
+            Not used when `table_name` is specified.
         """
         if fuzzy:
             filename = Book.fuzzy_filename(filename)
@@ -87,9 +92,13 @@ class Book():
                 index_col = -1
             if header is None:
                 header = -1
-            return xw.books[Path(filename).name].sheets[sheet_name].used_range. \
-                options(pd.DataFrame, index=index_col + 1, header=header + 1).value
-        return pd.read_excel(filename, sheet_name=sheet_name, header=header, index_col=index_col)
+            if table_name is None:
+                return xw.books[Path(filename).name].sheets[sheet_name].used_range \
+                    .options(pd.DataFrame, index=index_col + 1, header=header + 1).value
+            return xw.books[Path(filename).name].sheets[sheet_name].tables[table_name].range \
+                .options(pd.DataFrame, index=index_col + 1).value
+        return pd.read_excel(filename,
+            sheet_name=sheet_name, header=header, index_col=index_col)
 
     def __getattr__(self, __name: str):
         """
