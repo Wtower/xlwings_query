@@ -2,10 +2,11 @@
 Defines classes to encapsulate xlwings
 """
 from __future__ import annotations
+import os
 from pathlib import Path
 import xlwings as xw
 
-class App():
+class App(): # pylint: disable=too-few-public-methods
     """
     Encapsulate the App class that corresponds to an Excel instance
     Check if app is not open, then open it
@@ -19,12 +20,26 @@ class Book():
     Encapsulate the Book class
     https://docs.xlwings.org/en/latest/api.html#book
     """
-    def __init__(self, filename: str) -> None:
+    def __init__(self, filename: str, fuzzy: bool = False) -> None:
         """
-        Check that a book is open or open it
+        Check that a book is open or open it.
+        Initializes Excel if not open.
+        ## Parameters
+        filename: str
+            The pathfilename to open.
+        fuzzy: bool, default False
+            If defined, match the closest filename.
+            Useful for cross-platform execute where extended charset filenames may slightly differ.
+        ## Links
         https://github.com/Wtower/xlwings_query/issues/3
         https://stackoverflow.com/q/33533148/940098
         """
+        App()
+        if fuzzy:
+            from thefuzz import process # pylint: disable=import-outside-toplevel
+            filename = str(Path(
+                Path(filename).parent,
+                process.extractOne(Path(filename).name, os.listdir())[0]))
         if Path(filename).name in [b.name for b in xw.books]:
             self._book: xw.Book = xw.books[Path(filename).name]
         else:
@@ -74,7 +89,7 @@ class Sheet():
             return self._sheet.tables[table_name]
         return self._sheet.tables.add(source=self._sheet['A1'], name=table_name)
 
-class Table():
+class Table(): # pylint: disable=too-few-public-methods
     """
     Encapsulate the Table class
     https://docs.xlwings.org/en/latest/api.html#table
