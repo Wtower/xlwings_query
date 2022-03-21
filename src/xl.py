@@ -2,11 +2,14 @@
 Defines classes to encapsulate xlwings
 """
 from __future__ import annotations
-from typing import Optional, Union
-import os
+
+import unicodedata
 from pathlib import Path
-import xlwings as xw
+from typing import Optional, Union
+
 import pandas as pd
+import xlwings as xw
+
 
 class App(): # pylint: disable=too-few-public-methods
     """
@@ -22,43 +25,28 @@ class Book():
     Encapsulate the Book class
     https://docs.xlwings.org/en/latest/api.html#book
     """
-    def __init__(self, filename: str, fuzzy: bool = False) -> None:
+    def __init__(self, filename: str) -> None:
         """
         Check that a book is open or open it.
+        Normalizes filename for cross-platform support (#6).
         Initializes Excel if not open.
         ## Parameters
         filename: str
             The pathfilename to open.
-        fuzzy: bool, default False
-            If defined, match the closest filename.
-            Useful for cross-platform execute where extended charset filenames may slightly differ.
         ## Links
         https://github.com/Wtower/xlwings_query/issues/3
         https://stackoverflow.com/q/33533148/940098
         """
         App()
-        if fuzzy:
-            filename = Book.fuzzy_filename(filename)
+        filename = unicodedata.normalize('NFC', filename)
         if Path(filename).name in [b.name for b in xw.books]:
             self._book: xw.Book = xw.books[Path(filename).name]
         else:
             self._book = xw.books.open(filename)
 
     @staticmethod
-    def fuzzy_filename(filename: str) -> str:
-        """
-        Match the closest filename.
-        Useful for some extended-charset filenames that have different enconding for OSX/Win.
-        """
-        from thefuzz import process # pylint: disable=import-outside-toplevel
-        return str(Path(
-            Path(filename).parent,
-            process.extractOne(Path(filename).name, os.listdir(Path(filename).parent))[0]))
-
-    @staticmethod
     def read( # pylint: disable=too-many-arguments
         filename: str,
-        fuzzy: Optional[bool] = False,
         sheet_name: Optional[Union[int, str]] = 0,
         table_name: Optional[Union[int, str]] = None,
         index_col: Optional[int] = None,
@@ -70,8 +58,6 @@ class Book():
         ## Parameters
         filename: str
             The pathfilename to get or open.
-        fuzzy: bool, default False
-            If defined, match the closest filename
         sheet_name: int or str, default 0
             The sheet index or name.
         table_name: int or str, default 0
@@ -85,8 +71,7 @@ class Book():
             Note: For xlwings, None is 0, so converted to 1-indexed index.
             Not used when `table_name` is specified.
         """
-        if fuzzy:
-            filename = Book.fuzzy_filename(filename)
+        filename = unicodedata.normalize('NFC', filename)
         if xw.apps and Path(filename).name in [b.name for b in xw.books]:
             if index_col is None:
                 index_col = -1

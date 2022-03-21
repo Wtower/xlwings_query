@@ -1,12 +1,14 @@
 """
 Defines the main class
 """
-import sys
 from pathlib import Path
-import xlwings as xw
+
 import pandas as pd
-from filters import Filters
+import xlwings as xw
+
 import xl
+from filters import Filters
+
 
 class Query:
     """
