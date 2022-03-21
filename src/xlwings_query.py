@@ -66,18 +66,20 @@ class Query:
         """
         sheet: xl.Sheet = self.source.get_sheet(sheet_name)
         if table_name is None:
-            if 'pywin32' in sys.modules:
-                size: tuple[int, int] = (
-                    sheet.api.UsedRange.Rows.Count,
-                    sheet.api.UsedRange.Columns.Count
-                )
-            elif 'appscript' in sys.modules:
-                # TODO: This seems to not be working:
-                size = (
-                    sheet.api.used_range.rows.count,
-                    sheet.api.used_range.columns.count
-                )
-            xl_range: xw.Range = sheet.range((1, 1), size)
+            # https://github.com/Wtower/xlwings_query/issues/5
+            # if 'pywin32' in sys.modules:
+            #     size: tuple[int, int] = (
+            #         sheet.api.UsedRange.Rows.Count,
+            #         sheet.api.UsedRange.Columns.Count
+            #     )
+            # elif 'appscript' in sys.modules:
+            #     # This not working:
+            #     size = (
+            #         sheet.api.used_range.rows.count,
+            #         sheet.api.used_range.columns.count
+            #     )
+            # xl_range: xw.Range = sheet.range((1, 1), size)
+            xl_range: xw.Range = sheet.used_range
         else:
             xl_range = sheet.tables[table_name].data_body_range
         self.df = xl_range.options(pd.DataFrame, index=False, header=False).value
